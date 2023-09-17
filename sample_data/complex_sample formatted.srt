@@ -1,16 +1,13 @@
-
-
-
-
-
 1
 00:00:03,400 --> 00:00:06,177
 In this lesson, we're going to
 be talking about finance. And
 testest
 
+2
 00:00:06,177 --> 00:00:10,009
 one of the most important aspects
+
 
 3
 00:00:10,009 --> 00:00:13,655
@@ -20,6 +17,7 @@ other lending institution
 4
 00:00:13,655 --> 00:00:17,720
 to borrow money, the bank is happy
+
 
 5
 00:00:17,900 --> 00:00:21,480
@@ -116,3 +114,4 @@ account for a longer period of time, or
 00:01:46,860 --> 00:01:49,970
 find an institution that will pay
 me a higher interest rate.
+
