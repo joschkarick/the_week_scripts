@@ -2,10 +2,10 @@ import PySimpleGUI as sg
 import srt
 import os
 import sys
-import openpyxl
+#import openpyxl
 import csv
-from openpyxl import load_workbook
-from openpyxl.worksheet.table import Table
+#from openpyxl import load_workbook
+#from openpyxl.worksheet.table import Table
 from docx import Document
 from docx.shared import Cm
 
@@ -76,16 +76,16 @@ def create_script_for_voice_over():
 def closest(lst, target):
     return lst[min(range(len(lst)), key = lambda i: abs(lst[i]-target))]
 
-def add_srt_to_xlsx():
-    target_xlsx_path = layout[4][0].get()
-    wb = openpyxl.load_workbook(target_xlsx_path)
-    ws = wb['Subs DE EP 1']
-    print(ws.title)
-
-    # TODO: Identify correct column
-
-    cell = ws["B1:B6000"]
-    print(cell)
+#def add_srt_to_xlsx():
+#    target_xlsx_path = layout[4][0].get()
+#    wb = openpyxl.load_workbook(target_xlsx_path)
+#    ws = wb['Subs DE EP 1']
+#    print(ws.title)
+#
+#    # TODO: Identify correct column
+#
+#    cell = ws["B1:B6000"]
+#    print(cell)
 
 def load_srt():
     try:
@@ -102,13 +102,15 @@ def load_speaker_timecode_csv():
         speaker_timecode_csv_file = open(file_path, 'r', encoding='utf-8')
 
         with open(file_path, mode='r') as csv_file:
-            reader = csv.reader(csv_file)
+            reader = csv.reader(csv_file, delimiter=';', quotechar='"')
 
             speaker_timecodes = {rows[3]:rows[2] for rows in reader}
 
         return speaker_timecodes
     except FileNotFoundError:
         popup_error("Speaker Timecode CSV input file was not found. Is the path correct?",title="Error")
+    except IndexError:
+        popup_error("Speaker Timecode CSV could not be read. Make sure to use a semicolon (;) as a separator and quotation marks for text.")
 
 def resource_path(relative_path):
     try:
@@ -134,16 +136,16 @@ layout = [
     ],
     [
         sg.In(key="-SRT_TARGET_FILLED",visible=False,enable_events=True),
-        sg.FileSaveAs("Save as formatted SRT file",default_extension=".srt",file_types=(("SRT files",".srt"),),button_color=second_background_color, font=main_font),
+        sg.FileSaveAs("Save SRT file as formatted SRT file",default_extension=".srt",file_types=(("SRT files",".srt"),),button_color=second_background_color, font=main_font),
     ],
     [
         sg.In(key="-SCRIPT_TARGET_FILLED",visible=False,enable_events=True),
-        sg.FileSaveAs("Save as script for voice-over",default_extension=".docx",file_types=(("Word files (docx)",".docx"),),button_color=second_background_color, font=main_font),
+        sg.FileSaveAs("Merge SRT file and speaker timecodes into a script",default_extension=".docx",file_types=(("Word files (docx)",".docx"),),button_color=second_background_color, font=main_font),
     ],
-    [
-        sg.In(key="-XLSX_ADD_SRT",visible=False,enable_events=True),
-        sg.FileSaveAs("Add SRT to XLSX",default_extension=".xlsx",file_types=(("Excel files (xlsx)",".xlsx"),),button_color=second_background_color, font=main_font),
-    ]
+#    [
+#        sg.In(key="-XLSX_ADD_SRT",visible=False,enable_events=True),
+#        sg.FileSaveAs("Add SRT to XLSX",default_extension=".xlsx",file_types=(("Excel files (xlsx)",".xlsx"),),button_color=second_background_color, font=main_font),
+#    ]
 ]
 
 window = sg.Window("Subtitle Tools for The Week",layout,icon=resource_path("theweek.ico"), background_color=main_background_color) 
@@ -157,8 +159,8 @@ while True:
     if event == "-SCRIPT_TARGET_FILLED":
         create_script_for_voice_over()
 
-    if event == "-XLSX_ADD_SRT":
-        add_srt_to_xlsx()
+#    if event == "-XLSX_ADD_SRT":
+#        add_srt_to_xlsx()
         
     # End program if user closes window
     if event == sg.WIN_CLOSED:
