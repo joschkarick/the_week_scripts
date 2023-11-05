@@ -8,6 +8,7 @@ import csv
 #from openpyxl.worksheet.table import Table
 from docx import Document
 from docx.shared import Cm
+from bisect import bisect_left
 
 
 def popup_error(message, title=None):
@@ -52,12 +53,16 @@ def create_script_for_voice_over():
     previous_speaker = ''
 
     speaker_timecodes = load_speaker_timecode_csv()
-    speaker_timecodes_keys = [key for key in speaker_timecodes.keys()]
-    speaker_timecodes_as_float = [float(key) for key in speaker_timecodes_keys[1:]]
+    speaker_start_timecodes_as_float = [float(key[0]) for key in speaker_timecodes]
+    speaker_end_timecodes_as_float = [float(key[1]) for key in speaker_timecodes]
+
+    print(speaker_timecodes)
+    print(speaker_start_timecodes_as_float)
+    print(speaker_end_timecodes_as_float)
 
     for sub in subs:
-        closest_speaker_timecode_as_float = closest(speaker_timecodes_as_float, sub.start.total_seconds())
-        speaker = speaker_timecodes[str(closest_speaker_timecode_as_float)]
+        closest_speaker_timecode_as_float = closest(speaker_start_timecodes_as_float, speaker_end_timecodes_as_float, sub)
+        speaker = speaker_timecodes[closest_speaker_timecode_as_float]
 
         if previous_speaker != speaker:
             script.add_heading(speaker, level=1)
@@ -73,8 +78,42 @@ def create_script_for_voice_over():
     except PermissionError:
         popup_error("Could not save file. Is the target file still open in Word?",title="Error")
 
-def closest(lst, target):
-    return lst[min(range(len(lst)), key = lambda i: abs(lst[i]-target))]
+def closest(start_timecodes, end_timecodes, target_sub):
+    # Cases:
+    #   1. Subtitle start is equal to speaker start
+    #   2. Subtitle end is equal to speaker end
+    #   3. Subtitle start and end are fully in range of speaker start and end
+    #   4. No match (?)
+
+    target_start = target_sub.start.total_seconds()
+    target_end = target_sub.end.total_seconds()
+
+    pos_start = bisect_left(start_timecodes, target_start)
+    pos_end = bisect_left(end_timecodes, target_end)
+
+    if pos_start == 0:
+        return pos_start
+    if pos_start == len(start_timecodes):
+        return -1
+    
+    start_before = start_timecodes[pos_start - 1]
+    start_after = start_timecodes[pos_start]
+    end_before = start_timecodes[pos_end - 1]
+    end_after = start_timecodes[pos_end]
+
+    print(f"---")
+    print(f"Target Start/End: {target_start}/{target_end}")
+    print(f"Before Start/End: {start_before}/{end_before}")
+    print(f"After Start/End: {start_after}/{end_after}")
+
+    if start_after - target_start < target_start - start_before:
+        print(f"After should be used")
+        return pos_start
+    else:
+        print(f"Before should be used")
+        return pos_start - 1
+
+    return start_timecodes[min(range(len(start_timecodes)), key = lambda i: abs(start_timecodes[i]-target))]
 
 #def add_srt_to_xlsx():
 #    target_xlsx_path = layout[4][0].get()
@@ -104,7 +143,10 @@ def load_speaker_timecode_csv():
         with open(file_path, mode='r') as csv_file:
             reader = csv.reader(csv_file, delimiter=';', quotechar='"')
 
-            speaker_timecodes = {rows[3]:rows[2] for rows in reader}
+            speaker_timecodes = [[rows[3], rows[4], rows[2]] for rows in reader]
+
+            # Delete header line
+            speaker_timecodes = speaker_timecodes[1:]
 
         return speaker_timecodes
     except FileNotFoundError:
