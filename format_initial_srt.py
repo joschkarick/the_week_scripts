@@ -80,8 +80,8 @@ def create_script_for_voice_over():
 
 def closest(start_timecodes, end_timecodes, target_sub):
     # Cases:
-    #   1. Subtitle start is equal to speaker start
-    #   2. Subtitle end is equal to speaker end
+    #   1. Subtitle start is equal to speaker start (+- 1 second)
+    #   2. Subtitle end is equal to speaker end (+- 1 second)
     #   3. Subtitle start and end are fully in range of speaker start and end
     #   4. No match (?)
 
@@ -89,15 +89,20 @@ def closest(start_timecodes, end_timecodes, target_sub):
     target_end = target_sub.end.total_seconds()
 
     pos_start = bisect_left(start_timecodes, target_start)
-    pos_end = bisect_left(end_timecodes, target_end)
+
+    before = start_timecodes[pos_start - 1]
+    after = start_timecodes[pos_start]
+
+    
+
 
     if pos_start == 0:
         return pos_start
     if pos_start == len(start_timecodes):
         return -1
     
-    start_before = start_timecodes[pos_start - 1]
-    start_after = start_timecodes[pos_start]
+
+
     end_before = start_timecodes[pos_end - 1]
     end_after = start_timecodes[pos_end]
 
