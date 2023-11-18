@@ -25,9 +25,6 @@ def create_formatted_srt():
     srt_file = load_srt()
     subs = list(srt.parse(srt_file))
 
-    srt_file = load_srt()
-    subs = list(srt.parse(srt_file))
-
     for idx, sub in enumerate(subs):
         if sub.content.count('\n') == 0:
             sub.content = sub.content + '\n'
