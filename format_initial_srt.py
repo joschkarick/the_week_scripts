@@ -56,13 +56,9 @@ def create_script_for_voice_over():
     speaker_start_timecodes_as_float = [float(key[0]) for key in speaker_timecodes]
     speaker_end_timecodes_as_float = [float(key[1]) for key in speaker_timecodes]
 
-    print(speaker_timecodes)
-    print(speaker_start_timecodes_as_float)
-    print(speaker_end_timecodes_as_float)
-
     for sub in subs:
-        closest_speaker_timecode_as_float = closest(speaker_start_timecodes_as_float, speaker_end_timecodes_as_float, sub)
-        speaker = speaker_timecodes[closest_speaker_timecode_as_float]
+        closest_speaker_index = closest(speaker_start_timecodes_as_float, speaker_end_timecodes_as_float, sub)
+        speaker = speaker_timecodes[closest_speaker_index][2]
 
         if previous_speaker != speaker:
             script.add_heading(speaker, level=1)
@@ -79,57 +75,60 @@ def create_script_for_voice_over():
         popup_error("Could not save file. Is the target file still open in Word?",title="Error")
 
 def closest(start_timecodes, end_timecodes, target_sub):
-    # Cases:
-    #   1. Subtitle start is equal to speaker start (+- 1 second)
-    #   2. Subtitle end is equal to speaker end (+- 1 second)
-    #   3. Subtitle start and end are fully in range of speaker start and end
-    #   4. No match (?)
-
     target_start = target_sub.start.total_seconds()
     target_end = target_sub.end.total_seconds()
+    timecode_length = len(start_timecodes)
 
+    # Find best matching timecode for start of subtitle
     pos_start = bisect_left(start_timecodes, target_start)
-
-    before = start_timecodes[pos_start - 1]
-    after = start_timecodes[pos_start]
-
-    
-
 
     if pos_start == 0:
         return pos_start
-    if pos_start == len(start_timecodes):
+    if pos_start == timecode_length:
         return -1
-    
 
+    # Check speaker timecodes before, on and after the best matching timecode
+    before_index = min(max(0, pos_start - 1), timecode_length - 1)
+    before_start = start_timecodes[before_index]
+    before_end = end_timecodes[before_index]
+    before_from_timecode = max(before_start, target_start)
+    before_to_timecode = min(before_end, target_end)
+    before_coverage = before_to_timecode - before_from_timecode
 
-    end_before = start_timecodes[pos_end - 1]
-    end_after = start_timecodes[pos_end]
+    current_index = min(max(0, pos_start), timecode_length - 1)
+    current_start = start_timecodes[current_index]
+    current_end = end_timecodes[current_index]
+    current_from_timecode = max(current_start, target_start)
+    current_to_timecode = min(current_end, target_end)
+    current_coverage = current_to_timecode - current_from_timecode
 
-    print(f"---")
-    print(f"Target Start/End: {target_start}/{target_end}")
-    print(f"Before Start/End: {start_before}/{end_before}")
-    print(f"After Start/End: {start_after}/{end_after}")
+    after_index = min(max(0, pos_start + 1), timecode_length - 1)
+    after_start = start_timecodes[after_index]
+    after_end = end_timecodes[after_index]
+    after_from_timecode = max(after_start, target_start)
+    after_to_timecode = min(after_end, target_end)
+    after_coverage = after_to_timecode - after_from_timecode
 
-    if start_after - target_start < target_start - start_before:
-        print(f"After should be used")
-        return pos_start
+    #print(f"---")
+    #print(f"Target start/end: {target_start}, {target_end}")
+    #print(f"Before from/to/coverage: {before_from_timecode}, {before_to_timecode}, {before_coverage}")
+    #print(f"Current from/to/coverage: {current_from_timecode}, {current_to_timecode}, {current_coverage}")
+    #print(f"After from/to/coverage: {after_from_timecode}, {after_to_timecode}, {after_coverage}")
+
+    # Get timecodes for largest coverage
+    coverages = [before_coverage, current_coverage, after_coverage]
+    coverages.sort()
+    largest_coverage = coverages[-1]
+
+    if before_coverage == largest_coverage:
+        #print(f"Returning before_index: {before_index}")
+        return before_index
+    elif current_coverage == largest_coverage:
+        #print(f"Returning current_index: {current_index}")
+        return current_index
     else:
-        print(f"Before should be used")
-        return pos_start - 1
-
-    return start_timecodes[min(range(len(start_timecodes)), key = lambda i: abs(start_timecodes[i]-target))]
-
-#def add_srt_to_xlsx():
-#    target_xlsx_path = layout[4][0].get()
-#    wb = openpyxl.load_workbook(target_xlsx_path)
-#    ws = wb['Subs DE EP 1']
-#    print(ws.title)
-#
-#    # TODO: Identify correct column
-#
-#    cell = ws["B1:B6000"]
-#    print(cell)
+        #print(f"Returning after_index: {after_index}")
+        return after_index
 
 def load_srt():
     try:
