@@ -2,6 +2,7 @@
 /dist
 /data/audio
 /data/movies
+/config
 *.mp4
 *.wav
 *.docx

@@ -4,15 +4,20 @@ import sys
 import csv
 import datetime
 from pyannote.audio.pipelines.utils.hook import ProgressHook
+from strictyaml import load, Map, Str, Int, as_document
 
 def popup_error(message, title=None):
     layout = [
         [sg.Text(message,background_color=main_background_color,font=main_font)],
-        [sg.Button('Retry',background_color=second_background_color,font=main_font)]
+        [sg.Button('Exit',key="-EXIT",button_color=second_background_color,font=main_font)]
     ]
 
     window = sg.Window(title if title else message, layout)
     event, values = window.read(close=True)
+
+    if event == "-EXIT":
+        exit()
+
     return
 
 def detect_speaker():
@@ -20,7 +25,7 @@ def detect_speaker():
 
     pipeline = Pipeline.from_pretrained(
         "pyannote/speaker-diarization-3.0",
-        use_auth_token="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")
+        use_auth_token=config['auth_token'])
 
     # send pipeline to GPU (when available)
     #import torch
@@ -52,10 +57,49 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-main_background_color = "#434243"
-second_background_color = "#faa61a"
-main_font_family = "Lato"
-main_font = (main_font_family,"12")
+
+def load_config():
+    config_file_path = "config/speaker_diarization_config.yaml"
+    schema = Map({
+        "main_background_color": Str(),
+        "second_background_color": Str(),
+        "font_family": Str(),
+        "font_size": Int(),
+        "auth_token": Str()})
+    
+    try:
+        with open(config_file_path, mode='r') as config_file:
+            config_data = config_file.read()
+            config = load(config_data, schema).data
+            config_file.close()
+    except FileNotFoundError:
+        config = create_default_config(schema, config_file_path)
+        
+    return config
+
+def create_default_config(schema: Map, config_file_path):
+    yaml = as_document(schema = schema, data={
+        "main_background_color": "#434243",
+        "second_background_color": "#faa61a",
+        "font_family": "Lato",
+        "font_size": 12,
+        "auth_token": ""
+    })
+    with open(config_file_path, mode='w') as config_file:
+        config_file.write(yaml.as_yaml())
+        config_file.close()
+    
+    return yaml.data
+
+config = load_config()
+
+main_background_color = config['main_background_color']
+second_background_color = config['second_background_color']
+main_font_family = config['font_family']
+main_font = (main_font_family,config['font_size'])
+
+if config['auth_token'] == '':
+    popup_error("Huggingface.co authorization token is not maintained in config file",title="Error")
 
 layout = [
     [

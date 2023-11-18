@@ -9,12 +9,13 @@ import csv
 from docx import Document
 from docx.shared import Cm
 from bisect import bisect_left
+from strictyaml import load, Map, Str, Int, as_document
 
 
 def popup_error(message, title=None):
     layout = [
         [sg.Text(message,background_color=main_background_color,font=main_font)],
-        [sg.Button('Retry',background_color=second_background_color,font=main_font)]
+        [sg.Button('Retry',button=second_background_color,font=main_font)]
     ]
 
     window = sg.Window(title if title else message, layout)
@@ -163,10 +164,43 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-main_background_color = "#434243"
-second_background_color = "#faa61a"
-main_font_family = "Lato"
-main_font = (main_font_family,"12")
+def load_config():
+    config_file_path = "config/subtitle_tool_config.yaml"
+    schema = Map({
+        "main_background_color": Str(),
+        "second_background_color": Str(),
+        "font_family": Str(),
+        "font_size": Int()})
+    
+    try:
+        with open(config_file_path, mode='r') as config_file:
+            config_data = config_file.read()
+            config = load(config_data, schema).data
+            config_file.close()
+    except FileNotFoundError:
+        config = create_default_config(schema, config_file_path)
+        
+    return config
+
+def create_default_config(schema: Map, config_file_path):
+    yaml = as_document(schema = schema, data={
+        "main_background_color": "#434243",
+        "second_background_color": "#faa61a",
+        "font_family": "Lato",
+        "font_size": 12
+    })
+    with open(config_file_path, mode='w') as config_file:
+        config_file.write(yaml.as_yaml())
+        config_file.close()
+    
+    return yaml.data
+
+config = load_config()
+
+main_background_color = config['main_background_color']
+second_background_color = config['second_background_color']
+main_font_family = config['font_family']
+main_font = (main_font_family,config['font_size'])
 
 layout = [
     [
