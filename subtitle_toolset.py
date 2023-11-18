@@ -10,7 +10,7 @@ from docx import Document
 from docx.shared import Cm
 from bisect import bisect_left
 from strictyaml import load, Map, Str, Int, as_document
-
+from pathlib import Path
 
 def popup_error(message, title=None):
     layout = [
@@ -165,6 +165,8 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 def load_config():
+    Path("config").mkdir(exist_ok=True)
+
     config_file_path = "config/subtitle_tool_config.yaml"
     schema = Map({
         "main_background_color": Str(),

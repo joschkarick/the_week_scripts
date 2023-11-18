@@ -5,7 +5,7 @@ block_cipher = None
 
 
 a = Analysis(
-    ['format_initial_srt.py'],
+    ['subtitle_toolset.py'],
     pathex=[],
     binaries=[],
     datas=[('theweek.ico', '.')],
@@ -26,7 +26,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='format_initial_srt',
+    name='subtitle_toolset',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -47,5 +47,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='format_initial_srt',
+    name='subtitle_toolset',
 )

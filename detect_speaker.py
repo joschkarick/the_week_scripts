@@ -5,6 +5,7 @@ import csv
 import datetime
 from pyannote.audio.pipelines.utils.hook import ProgressHook
 from strictyaml import load, Map, Str, Int, as_document
+from pathlib import Path
 
 def popup_error(message, title=None):
     layout = [
@@ -59,6 +60,8 @@ def resource_path(relative_path):
 
 
 def load_config():
+    Path("config").mkdir(exist_ok=True)
+
     config_file_path = "config/speaker_diarization_config.yaml"
     schema = Map({
         "main_background_color": Str(),
